@@ -6,6 +6,21 @@ const uint32_t COMMAND_DELAY = 250;
 SoftwareSerial gpsPort(11, 10); // RX, TX
 SoftwareSerial debugPort(4, 5); // RX, TX
 
+//
+static const int pinData = 6;
+static const int pinClk  = 7;
+static const int pinLatch = 8;
+
+char hoursHI[] = {13,  5, 12, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13};
+char hoursLO[] = { 1,  4,  0,  2,  8, 12, 13,  5,  3,  9,  1,  1,  1,  1,  1,  1};
+
+char minutesHI[] = { 8,  9,  1,  0, 12, 13,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8};
+char minutesLO[] = { 2, 13, 12,  9,  4,  5,  0,  1,  8,  3,  2,  2,  2,  2,  2,  2};
+
+char secondsHI[] = { 5, 12,  8,  9,  0,  1,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5};
+char secondsLO[] = { 2,  4,  5, 12,  0,  1,  9,  8, 13,  3,  2,  2,  2,  2,  2,  2};
+//
+
 static int globalYear = 0;
 static int globalMonth = 0;
 static int globalDay = 0;
@@ -191,7 +206,7 @@ void setup() {
   gpsPort.begin( 9600 );
   delay( COMMAND_DELAY );
 
-  sendUBX( ubxAntennaConfig, sizeof(ubxAntennaConfig) );
+  /*sendUBX( ubxAntennaConfig, sizeof(ubxAntennaConfig) );
   delay( COMMAND_DELAY );
 
   sendUBX( ubxAntennaConfig2, sizeof(ubxAntennaConfig2) );
@@ -204,7 +219,7 @@ void setup() {
   delay( COMMAND_DELAY );
 
   sendUBX( ubxEnableZDA, sizeof(ubxEnableZDA) );
-  delay( COMMAND_DELAY );
+  delay( COMMAND_DELAY );*/
 
   pinMode(2, INPUT);
   attachInterrupt(0, buttonPressedPlus, RISING);
@@ -228,27 +243,26 @@ void buttonPressedMinus() {
 }
 
 void writeByte(unsigned char data) {
-  /*int delayValue = 10;
-    for (int i = 0; i < 8; i++) {
+  int delayValue = 10;
+  for (int i = 0; i < 8; i++) {
     int b = (data >> i) & 0x1;
 
-    //delay(5000);
     delay(delayValue);
-    PIO_Clear(&pinClk);
+    digitalWrite(pinClk, LOW);
     delay(delayValue);
     if (b>0) {
       delay(delayValue);
-      PIO_Set(&pinData);
+      digitalWrite(pinData, HIGH);
       delay(delayValue);
     } else {
       delay(delayValue);
-      PIO_Clear(&pinData);
+      digitalWrite(pinData, LOW);
       delay(delayValue);
     }
     delay(delayValue);
-    PIO_Set(&pinClk);
+    digitalWrite(pinClk, HIGH);
     delay(delayValue);
-    }*/
+  }
 }
 
 void cleanBuffer() {
@@ -328,13 +342,13 @@ void showTime() {
   int secHi = globalSeconds / 10;
   int secLo = globalSeconds % 10;
 
-  /*PIO_Clear(&pinLatch);
+  digitalWrite(pinLatch, LOW);
 
-    writeByte(hoursLO[hourLo] + hoursHI[hourHi]*16);
-    writeByte(minutesLO[minLo]*16 + minutesHI[minHi]);
-    writeByte(secondsLO[secLo]*16 + secondsHI[secHi]);
+  writeByte(hoursLO[hourLo] + hoursHI[hourHi]*16);
+  writeByte(minutesLO[minLo]*16 + minutesHI[minHi]);
+  writeByte(secondsLO[secLo]*16 + secondsHI[secHi]);
 
-    PIO_Set(&pinLatch);*/
+  digitalWrite(pinLatch, HIGH);
 }
 
 void loop() { // run over and over
