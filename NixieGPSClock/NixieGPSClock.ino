@@ -7,18 +7,18 @@ SoftwareSerial gpsPort(11, 10); // RX, TX
 SoftwareSerial debugPort(4, 5); // RX, TX
 
 //
-static const int pinData = 6;
-static const int pinClk  = 7;
-static const int pinLatch = 8;
+static const int pinData = 5;
+static const int pinClk  = 25;
+static const int pinLatch = 22;
 
-char hoursHI[] = {13,  5, 12, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13};
-char hoursLO[] = { 1,  4,  0,  2,  8, 12, 13,  5,  3,  9,  1,  1,  1,  1,  1,  1};
+char hoursHI[] = { 9,  2, 10, 14,  6,  4, 12,  8,  0,  1,  9,  9,  9,  9,  9,  9};
+char hoursLO[] = { 3,  4,  5, 13, 12,  8,  9,  1,  0,  2,  3,  3,  3,  3,  3,  3};
 
-char minutesHI[] = { 8,  9,  1,  0, 12, 13,  8,  8,  8,  8,  8,  8,  8,  8,  8,  8};
-char minutesLO[] = { 2, 13, 12,  9,  4,  5,  0,  1,  8,  3,  2,  2,  2,  2,  2,  2};
+char minutesHI[] = { 3,  4,  5, 13, 12,  8,  9,  1,  0,  2,  3,  3,  3,  3,  3,  3};
+char minutesLO[] = { 3,  4,  5, 13, 12,  8,  9,  1,  0,  2,  3,  3,  3,  3,  3,  3};
 
-char secondsHI[] = { 5, 12,  8,  9,  0,  1,  5,  5,  5,  5,  5,  5,  5,  5,  5,  5};
-char secondsLO[] = { 2,  4,  5, 12,  0,  1,  9,  8, 13,  3,  2,  2,  2,  2,  2,  2};
+char secondsHI[] = { 3,  4,  5, 13, 12,  8,  9,  1,  0,  2,  3,  3,  3,  3,  3,  3};
+char secondsLO[] = { 3,  4,  5, 13, 12,  8,  9,  1,  0,  2,  3,  3,  3,  3,  3,  3};
 //
 
 static int globalYear = 0;
@@ -28,7 +28,8 @@ static int globalHours = 0;
 static int globalMinutes = 0;
 static int globalSeconds = 0;
 
-static int UTC_OFFSET = 2;
+//Netherlands
+static int UTC_OFFSET = 1;
 static int isDaylightSavingTime = 0;
 
 const int eepromAddrForUtcOffset = 0;
@@ -195,6 +196,23 @@ void validateUtcOffset() {
   }
 }
 
+void firstTest() {
+  digitalWrite(0, HIGH);   // turn the LED on (HIGH is the voltage level)
+  digitalWrite(1, HIGH);
+
+  //First test
+  for(int i = 0; i < 10; i++) {
+    globalHours = i* 10 + i;
+    globalMinutes = i* 10 + i;
+    globalSeconds = i* 10 + i;
+    showTime();
+    delay(100);
+  }
+  
+  digitalWrite(0, LOW);   // turn the LED on (HIGH is the voltage level)
+  digitalWrite(1, LOW);
+}
+
 void setup() {
   // set the data rate for the SoftwareSerial port
   debugPort.begin( 38400 );
@@ -210,7 +228,7 @@ void setup() {
   delay( COMMAND_DELAY );
 
   sendUBX( ubxAntennaConfig2, sizeof(ubxAntennaConfig2) );
-  delay( COMMAND_DELAY );
+  delay( COMMAND_DELAY );*/
 
   sendUBX( ubxTimeAndDateInvalidValuesEnable, sizeof(ubxTimeAndDateInvalidValuesEnable) );
   delay( COMMAND_DELAY );
@@ -219,7 +237,7 @@ void setup() {
   delay( COMMAND_DELAY );
 
   sendUBX( ubxEnableZDA, sizeof(ubxEnableZDA) );
-  delay( COMMAND_DELAY );*/
+  delay( COMMAND_DELAY );
 
   pinMode(2, INPUT);
   attachInterrupt(0, buttonPressedPlus, RISING);
@@ -228,6 +246,16 @@ void setup() {
   attachInterrupt(1, buttonPressedMinus, RISING);
 
   cleanBuffer();
+
+  pinMode(pinData, OUTPUT); //LED on Model B
+  pinMode(pinClk, OUTPUT); //LED on Model B
+  pinMode(pinLatch, OUTPUT); //LED on Model B
+
+  //just for debug
+  pinMode(0, OUTPUT); //LED on Model B
+  pinMode(1, OUTPUT); //LED on Model A  or Pro
+
+  firstTest();
 }
 
 void buttonPressedPlus() {
@@ -243,7 +271,7 @@ void buttonPressedMinus() {
 }
 
 void writeByte(unsigned char data) {
-  int delayValue = 10;
+  int delayValue = 1;
   for (int i = 0; i < 8; i++) {
     int b = (data >> i) & 0x1;
 
@@ -344,14 +372,16 @@ void showTime() {
 
   digitalWrite(pinLatch, LOW);
 
-  writeByte(hoursLO[hourLo] + hoursHI[hourHi]*16);
-  writeByte(minutesLO[minLo]*16 + minutesHI[minHi]);
-  writeByte(secondsLO[secLo]*16 + secondsHI[secHi]);
+  writeByte(secondsLO[secLo & 0xF] + secondsHI[secHi & 0xF]*16);
+  writeByte(minutesLO[minLo & 0xF] + minutesHI[minHi & 0xF]*16);
+  writeByte(hoursLO[hourLo & 0xF] + hoursHI[hourHi & 0xF]*16);  
 
   digitalWrite(pinLatch, HIGH);
 }
 
+
 void loop() { // run over and over
+
   gpsPort.listen();
 
   while (gpsPort.available() > 0) {
