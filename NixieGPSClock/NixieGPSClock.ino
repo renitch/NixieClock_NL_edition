@@ -198,7 +198,9 @@ void validateUtcOffset() {
 
 void firstTest() {
   digitalWrite(0, HIGH);   // turn the LED on (HIGH is the voltage level)
+  delay(50);
   digitalWrite(1, HIGH);
+  delay(50);
 
   //First test
   for(int i = 0; i < 10; i++) {
@@ -210,25 +212,27 @@ void firstTest() {
   }
   
   digitalWrite(0, LOW);   // turn the LED on (HIGH is the voltage level)
+  delay(50);
   digitalWrite(1, LOW);
+  delay(50);
 }
 
 void setup() {
   // set the data rate for the SoftwareSerial port
-  debugPort.begin( 38400 );
-  debugPort.println("Hello, world?");
+  // debugPort.begin( 38400 );
+  // debugPort.println("Hello, world?");
 
-  /*EEPROM.get(eepromAddrForUtcOffset, UTC_OFFSET);
-  validateUtcOffset();*/
+  //EEPROM.get(eepromAddrForUtcOffset, UTC_OFFSET);
+  //validateUtcOffset();
 
   gpsPort.begin( 9600 );
   delay( COMMAND_DELAY );
 
-  /*sendUBX( ubxAntennaConfig, sizeof(ubxAntennaConfig) );
-  delay( COMMAND_DELAY );
+  //sendUBX( ubxAntennaConfig, sizeof(ubxAntennaConfig) );
+  //delay( COMMAND_DELAY );
 
-  sendUBX( ubxAntennaConfig2, sizeof(ubxAntennaConfig2) );
-  delay( COMMAND_DELAY );*/
+  //sendUBX( ubxAntennaConfig2, sizeof(ubxAntennaConfig2) );
+  //delay( COMMAND_DELAY );
 
   sendUBX( ubxTimeAndDateInvalidValuesEnable, sizeof(ubxTimeAndDateInvalidValuesEnable) );
   delay( COMMAND_DELAY );
@@ -238,13 +242,13 @@ void setup() {
 
   sendUBX( ubxEnableZDA, sizeof(ubxEnableZDA) );
   delay( COMMAND_DELAY );
-
+/*
   pinMode(2, INPUT);
   attachInterrupt(0, buttonPressedPlus, RISING);
 
   pinMode(3,INPUT);
   attachInterrupt(1, buttonPressedMinus, RISING);
-
+*/
   cleanBuffer();
 
   pinMode(pinData, OUTPUT); //LED on Model B
@@ -257,7 +261,7 @@ void setup() {
 
   firstTest();
 }
-
+/*
 void buttonPressedPlus() {
   UTC_OFFSET++;
   validateUtcOffset();
@@ -269,9 +273,9 @@ void buttonPressedMinus() {
   validateUtcOffset();
   EEPROM.put(eepromAddrForUtcOffset, UTC_OFFSET);
 }
-
+*/
 void writeByte(unsigned char data) {
-  int delayValue = 1;
+  int delayValue = 3;
   for (int i = 0; i < 8; i++) {
     int b = (data >> i) & 0x1;
 
@@ -370,15 +374,21 @@ void showTime() {
   int secHi = globalSeconds / 10;
   int secLo = globalSeconds % 10;
 
+  delay(3);
   digitalWrite(pinLatch, LOW);
+  delay(3);
 
   writeByte(secondsLO[secLo & 0xF] + secondsHI[secHi & 0xF]*16);
   writeByte(minutesLO[minLo & 0xF] + minutesHI[minHi & 0xF]*16);
   writeByte(hoursLO[hourLo & 0xF] + hoursHI[hourHi & 0xF]*16);  
 
+  delay(3);
   digitalWrite(pinLatch, HIGH);
+  delay(3);
 }
 
+
+static int ix = 0;
 
 void loop() { // run over and over
 
@@ -390,7 +400,9 @@ void loop() { // run over and over
       buf[currentIndex++] = inByte;
       if (inByte == 10 || inByte == 13) {
         if (strstr(buf, "$G") != NULL && strstr(buf, "ZDA") != NULL) {
+          digitalWrite(0, (ix % 2 == 0) ? HIGH : LOW);
           extractTime(buf);
+          ix++;
         }
 
         //debugPort.println(myString);
